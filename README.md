@@ -34,9 +34,8 @@
 
 ### 直接打开（最简单）
 ```bash
-# 找到项目目录，双击 index.html 文件
-# 或者用浏览器打开
-open ~/todolist/index.html
+# 用浏览器打开
+https://siyaochen103.github.io/todo-list/
 ```
 
 ### 本地服务器（推荐）
