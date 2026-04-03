@@ -1,0 +1,1424 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>To Do List</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-main: #FDF8F5;
+      --bg-card: #FFFBF8;
+      --primary: #E8A598;
+      --primary-hover: #D98A7D;
+      --success: #A8D5BA;
+      --warning: #FFD9B3;
+      --text-main: #5D4E4E;
+      --text-sub: #8B7E7E;
+      --border: #F0E5E0;
+      --shadow: rgba(93, 78, 78, 0.08);
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Nunito', system-ui, sans-serif;
+      background: var(--bg-main);
+      color: var(--text-main);
+      min-height: 100vh;
+      padding: 20px;
+      line-height: 1.6;
+    }
+
+    .container {
+      display: flex;
+      gap: 20px;
+      padding-left: 10%;
+    }
+
+    .sidebar {
+      width: 280px;
+      flex-shrink: 0;
+    }
+
+    .main-content {
+      flex: 1;
+      min-width: 0;
+      max-width: 650px;
+    }
+
+    h1 {
+      text-align: center;
+      font-size: 1.8rem;
+      font-weight: 700;
+      color: var(--text-main);
+      margin-bottom: 20px;
+    }
+
+    .stats-container {
+      display: flex;
+      gap: 12px;
+      margin-bottom: 20px;
+    }
+
+    .stat-card {
+      flex: 1;
+      background: var(--bg-card);
+      border-radius: 16px;
+      padding: 16px 12px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      border: 2px solid transparent;
+      box-shadow: 0 4px 12px var(--shadow);
+    }
+
+    .stat-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 16px var(--shadow);
+    }
+
+    .stat-card.active {
+      border-color: var(--primary);
+    }
+
+    .stat-card .number {
+      font-size: 1.8rem;
+      font-weight: 700;
+      display: block;
+    }
+
+    .stat-card .label {
+      font-size: 0.85rem;
+      color: var(--text-sub);
+    }
+
+    .stat-card.pending .number { color: var(--primary); }
+    .stat-card.completed .number { color: var(--success); }
+    .stat-card.due-today .number { color: #E8A598; }
+
+    .input-group {
+      background: var(--bg-card);
+      border-radius: 16px;
+      padding: 16px;
+      margin-bottom: 20px;
+      display: flex;
+      gap: 10px;
+      box-shadow: 0 4px 12px var(--shadow);
+    }
+
+    .input-group input[type="text"] {
+      flex: 1;
+      border: 2px solid var(--border);
+      border-radius: 12px;
+      padding: 12px 16px;
+      font-size: 1rem;
+      font-family: inherit;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+
+    .input-group input[type="text"]:focus {
+      border-color: var(--primary);
+    }
+
+    .input-group input[type="date"],
+    .input-group input[type="time"] {
+      border: 2px solid var(--border);
+      border-radius: 12px;
+      padding: 10px 12px;
+      font-size: 0.9rem;
+      font-family: inherit;
+      outline: none;
+      cursor: pointer;
+    }
+
+    .input-group input[type="date"]:focus,
+    .input-group input[type="time"]:focus {
+      border-color: var(--primary);
+    }
+
+    .input-row {
+      display: flex;
+      gap: 10px;
+    }
+
+    .input-row input[type="date"] {
+      flex: 1;
+    }
+
+    .input-row input[type="time"] {
+      width: 120px;
+    }
+
+    .btn-add {
+      background: var(--primary);
+      color: white;
+      border: none;
+      border-radius: 12px;
+      padding: 12px 20px;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+
+    .btn-add:hover {
+      background: var(--primary-hover);
+    }
+
+    .filter-bar {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 16px;
+    }
+
+    .filter-btn {
+      padding: 8px 16px;
+      border: none;
+      border-radius: 20px;
+      background: var(--border);
+      color: var(--text-sub);
+      font-size: 0.9rem;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .filter-btn.active {
+      background: var(--primary);
+      color: white;
+    }
+
+    .filter-btn:hover:not(.active) {
+      background: #E8D8D0;
+    }
+
+    .section-title {
+      font-size: 1rem;
+      font-weight: 600;
+      color: var(--text-sub);
+      margin-bottom: 12px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .section-title .arrow {
+      transition: transform 0.2s;
+    }
+
+    .section-title.collapsed .arrow {
+      transform: rotate(-90deg);
+    }
+
+    .todo-list {
+      background: var(--bg-card);
+      border-radius: 16px;
+      padding: 8px;
+      margin-bottom: 16px;
+      box-shadow: 0 4px 12px var(--shadow);
+      min-height: 60px;
+    }
+
+    .todo-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 14px 12px;
+      border-radius: 12px;
+      cursor: grab;
+      transition: all 0.2s;
+      background: white;
+      margin-bottom: 8px;
+    }
+
+    .todo-item:last-child {
+      margin-bottom: 0;
+    }
+
+    .todo-item:hover {
+      box-shadow: 0 2px 8px var(--shadow);
+    }
+
+    .todo-item.dragging {
+      opacity: 0.5;
+      transform: scale(0.98);
+    }
+
+    .todo-item.due-soon {
+      border-left: 4px solid var(--warning);
+    }
+
+    .todo-item.completed {
+      opacity: 0.7;
+    }
+
+    .todo-item.completed .todo-text {
+      text-decoration: line-through;
+      color: var(--text-sub);
+    }
+
+    .drag-handle {
+      color: var(--text-sub);
+      font-size: 1.2rem;
+      cursor: grab;
+    }
+
+    .checkbox {
+      width: 24px;
+      height: 24px;
+      border: 2px solid var(--border);
+      border-radius: 50%;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.2s;
+      flex-shrink: 0;
+    }
+
+    .checkbox:hover {
+      border-color: var(--primary);
+    }
+
+    .checkbox.checked {
+      background: var(--success);
+      border-color: var(--success);
+    }
+
+    .checkbox.checked::after {
+      content: "✓";
+      color: white;
+      font-size: 14px;
+      font-weight: bold;
+    }
+
+    .todo-text {
+      flex: 1;
+      font-size: 1rem;
+    }
+
+    .todo-deadline {
+      font-size: 0.85rem;
+      color: var(--text-sub);
+      background: var(--bg-main);
+      padding: 4px 10px;
+      border-radius: 12px;
+    }
+
+    .todo-deadline.overdue {
+      background: #FFE5E5;
+      color: #D95353;
+    }
+
+    .todo-deadline.due-today {
+      background: var(--warning);
+      color: #B87830;
+    }
+
+    .btn-delete {
+      background: none;
+      border: none;
+      color: var(--text-sub);
+      cursor: pointer;
+      font-size: 1.2rem;
+      padding: 4px 8px;
+      border-radius: 8px;
+      transition: all 0.2s;
+    }
+
+    .btn-edit {
+      background: none;
+      border: none;
+      color: var(--text-sub);
+      cursor: pointer;
+      font-size: 1.2rem;
+      padding: 4px 8px;
+      border-radius: 8px;
+      transition: all 0.2s;
+    }
+
+    .btn-edit:hover {
+      background: #E8F5E9;
+      color: var(--success);
+    }
+
+    .btn-delete:hover {
+      background: #FFE5E5;
+      color: #D95353;
+    }
+
+    .btn-pin {
+      background: none;
+      border: none;
+      color: var(--text-sub);
+      cursor: pointer;
+      font-size: 1.2rem;
+      padding: 4px 8px;
+      border-radius: 8px;
+      transition: all 0.2s;
+    }
+
+    .btn-pin:hover {
+      background: #FFF3E0;
+      color: #E8A598;
+    }
+
+    .btn-pin.pinned {
+      color: #E8A598;
+    }
+
+    .todo-item.pinned {
+      background: #FFF8F5;
+      border-left: 3px solid var(--primary);
+    }
+
+    .pinned-section-title {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 0.9rem;
+      color: var(--text-sub);
+      margin-bottom: 8px;
+    }
+
+    .pinned-section-title::before {
+      content: "📌";
+    }
+
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.3);
+      justify-content: center;
+      align-items: center;
+      z-index: 1000;
+    }
+
+    .modal-overlay.show {
+      display: flex;
+    }
+
+    .modal {
+      background: var(--bg-card);
+      border-radius: 16px;
+      padding: 24px;
+      max-width: 320px;
+      text-align: center;
+      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
+    }
+
+    .modal h3 {
+      margin-bottom: 12px;
+      color: var(--text-main);
+    }
+
+    .modal p {
+      color: var(--text-sub);
+      margin-bottom: 20px;
+    }
+
+    .modal-buttons {
+      display: flex;
+      gap: 12px;
+      justify-content: center;
+    }
+
+    .modal-btn {
+      padding: 10px 24px;
+      border-radius: 12px;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .modal-btn.cancel {
+      background: var(--border);
+      color: var(--text-sub);
+      border: none;
+    }
+
+    .modal-btn.cancel:hover {
+      background: #E8D8D0;
+    }
+
+    .modal-btn.confirm {
+      background: #D95353;
+      color: white;
+      border: none;
+    }
+
+    .modal-btn.confirm:hover {
+      background: #C94040;
+    }
+
+    .archived-section {
+      margin-top: 20px;
+    }
+
+    .archived-list {
+      background: var(--bg-card);
+      border-radius: 16px;
+      padding: 8px;
+      box-shadow: 0 4px 12px var(--shadow);
+    }
+
+    .archived-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px;
+      border-radius: 12px;
+      background: white;
+      margin-bottom: 8px;
+      opacity: 0.8;
+    }
+
+    .archived-item:last-child {
+      margin-bottom: 0;
+    }
+
+    .btn-restore {
+      background: none;
+      border: 1px solid var(--border);
+      color: var(--text-sub);
+      padding: 6px 12px;
+      border-radius: 8px;
+      font-size: 0.85rem;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .btn-restore:hover {
+      background: var(--primary);
+      color: white;
+      border-color: var(--primary);
+    }
+
+    .empty-state {
+      text-align: center;
+      padding: 30px;
+      color: var(--text-sub);
+    }
+
+    .no-results {
+      text-align: center;
+      padding: 20px;
+      color: var(--text-sub);
+      font-style: italic;
+    }
+
+    .calendar {
+      background: var(--bg-card);
+      border-radius: 16px;
+      padding: 16px;
+      box-shadow: 0 4px 12px var(--shadow);
+    }
+
+    .calendar-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+    }
+
+    .calendar-title {
+      font-size: 1rem;
+      font-weight: 600;
+      color: var(--text-main);
+    }
+
+    .calendar-nav {
+      background: none;
+      border: none;
+      cursor: pointer;
+      font-size: 1.2rem;
+      color: var(--text-sub);
+      padding: 4px 8px;
+      border-radius: 8px;
+      transition: all 0.2s;
+    }
+
+    .calendar-nav:hover {
+      background: var(--border);
+    }
+
+    .calendar-weekdays {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 4px;
+      margin-bottom: 8px;
+    }
+
+    .calendar-weekday {
+      text-align: center;
+      font-size: 0.75rem;
+      color: var(--text-sub);
+      padding: 4px;
+    }
+
+    .calendar-days {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 4px;
+    }
+
+    .calendar-day {
+      text-align: center;
+      padding: 8px 4px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 0.9rem;
+      transition: all 0.2s;
+      color: var(--text-main);
+    }
+
+    .calendar-day:hover {
+      background: var(--border);
+    }
+
+    .calendar-day.other-month {
+      color: var(--text-sub);
+      opacity: 0.5;
+    }
+
+    .calendar-day.today {
+      background: var(--primary);
+      color: white;
+      font-weight: 600;
+    }
+
+    .calendar-day.selected {
+      background: var(--warning);
+      color: var(--text-main);
+      font-weight: 600;
+    }
+
+    .calendar-day.has-tasks {
+      position: relative;
+    }
+
+    .calendar-day.has-tasks::after {
+      content: "";
+      position: absolute;
+      bottom: 2px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 6px;
+      height: 6px;
+      background: var(--primary);
+      border-radius: 50%;
+    }
+
+    .calendar-day.has-tasks.today::after {
+      background: white;
+    }
+
+    .calendar-day.selected.has-tasks::after {
+      background: var(--text-main);
+    }
+
+    .selected-date-title {
+      margin-top: 16px;
+      font-size: 0.95rem;
+      font-weight: 600;
+      color: var(--text-main);
+      padding: 8px 0;
+      border-top: 1px solid var(--border);
+    }
+
+    .selected-date-tasks {
+      margin-top: 8px;
+    }
+
+    .selected-date-task {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 8px;
+      border-radius: 8px;
+      background: var(--bg-main);
+      margin-bottom: 6px;
+    }
+
+    .selected-date-task .checkbox {
+      width: 18px;
+      height: 18px;
+    }
+
+    .selected-date-task .todo-text {
+      font-size: 0.9rem;
+    }
+
+    .selected-date-task.completed .todo-text {
+      text-decoration: line-through;
+      color: var(--text-sub);
+    }
+
+    @media (max-width: 768px) {
+      body {
+        padding: 12px;
+      }
+
+      .container {
+        flex-direction: column-reverse;
+        padding-left: 0;
+      }
+
+      .sidebar {
+        width: 100%;
+      }
+
+      .main-content {
+        max-width: 100%;
+      }
+
+      h1 {
+        font-size: 1.5rem;
+      }
+
+      .stats-container {
+        flex-wrap: wrap;
+      }
+
+      .stat-card {
+        min-width: calc(50% - 6px);
+      }
+
+      .stat-card:nth-child(3) {
+        flex: 1;
+      }
+
+      .input-group {
+        flex-direction: column;
+      }
+
+      .input-row {
+        flex-direction: column;
+      }
+
+      .input-row input[type="date"],
+      .input-row input[type="time"] {
+        width: 100%;
+      }
+
+      .btn-add {
+        width: 100%;
+      }
+
+      .filter-bar {
+        flex-wrap: wrap;
+      }
+
+      .todo-item {
+        padding: 12px 8px;
+        gap: 8px;
+      }
+
+      .todo-deadline {
+        display: none;
+      }
+
+      .todo-item .todo-deadline {
+        display: block;
+        position: absolute;
+        right: 70px;
+        top: 50%;
+        transform: translateY(-50%);
+      }
+
+      .todo-item {
+        position: relative;
+        padding-right: 130px;
+      }
+
+      .btn-edit,
+      .btn-delete,
+      .btn-pin {
+        position: absolute;
+        top: 50%;
+        transform: translateY(-50%);
+      }
+
+      .btn-edit {
+        right: 90px;
+      }
+
+      .btn-pin {
+        right: 60px;
+      }
+
+      .btn-delete {
+        right: 30px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="sidebar">
+      <div class="calendar">
+        <div class="calendar-header">
+          <button class="calendar-nav" onclick="changeMonth(-1)">◀</button>
+          <span class="calendar-title" id="calendar-title">2026年4月</span>
+          <button class="calendar-nav" onclick="changeMonth(1)">▶</button>
+        </div>
+        <div class="calendar-weekdays">
+          <div class="calendar-weekday">日</div>
+          <div class="calendar-weekday">一</div>
+          <div class="calendar-weekday">二</div>
+          <div class="calendar-weekday">三</div>
+          <div class="calendar-weekday">四</div>
+          <div class="calendar-weekday">五</div>
+          <div class="calendar-weekday">六</div>
+        </div>
+        <div class="calendar-days" id="calendar-days"></div>
+        
+        <div class="selected-date-title" id="selected-date-title" style="display: none;"></div>
+        <div class="selected-date-tasks" id="selected-date-tasks"></div>
+      </div>
+    </div>
+
+    <div class="main-content">
+      <h1>To Do List</h1>
+
+      <div class="stats-container">
+      <div class="stat-card pending" data-filter="pending" onclick="setFilter('pending')">
+        <span class="number" id="pending-count">0</span>
+        <span class="label">今日待办</span>
+      </div>
+      <div class="stat-card completed" data-filter="completed" onclick="setFilter('completed')">
+        <span class="number" id="completed-count">0</span>
+        <span class="label">已完成</span>
+      </div>
+      <div class="stat-card due-today" data-filter="due-today" onclick="setFilter('due-today')">
+        <span class="number" id="due-today-count">0</span>
+        <span class="label">今日到期</span>
+      </div>
+    </div>
+
+    <div class="input-group">
+      <input type="text" id="todo-input" placeholder="添加新的待办事项..." onkeypress="handleKeyPress(event)">
+      <div class="input-row">
+        <input type="date" id="deadline-input">
+        <input type="time" id="time-input" placeholder="时间">
+      </div>
+      <button class="btn-add" onclick="addTodo()">添加</button>
+    </div>
+
+    <div class="filter-bar">
+      <button class="filter-btn active" onclick="setFilter('all')">全部</button>
+      <button class="filter-btn" onclick="setFilter('pending')">待办</button>
+      <button class="filter-btn" onclick="setFilter('due-today')">今日到期</button>
+      <button class="filter-btn" onclick="setFilter('completed')">已完成</button>
+    </div>
+
+    <div class="todo-list" id="todo-list">
+      <div class="empty-state">暂无待办事项</div>
+    </div>
+
+    <div class="archived-section">
+      <div class="section-title" onclick="toggleArchived()">
+        <span class="arrow">▼</span>
+        <span>已归档事项 (<span id="archived-count">0</span>)</span>
+      </div>
+      <div class="archived-list" id="archived-list" style="display: none;">
+        <div class="empty-state">暂无归档事项</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-overlay" id="delete-modal">
+    <div class="modal">
+      <h3 id="delete-modal-title">确认删除</h3>
+      <p id="delete-modal-text">确定要删除这个待办事项吗？</p>
+      <div class="modal-buttons">
+        <button class="modal-btn cancel" onclick="closeDeleteModal()">取消</button>
+        <button class="modal-btn confirm" onclick="confirmDelete()">删除</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-overlay" id="edit-modal">
+    <div class="modal">
+      <h3>编辑待办事项</h3>
+      <div style="text-align: left; margin-bottom: 16px;">
+        <label style="display: block; margin-bottom: 8px; color: var(--text-sub); font-size: 0.9rem;">内容</label>
+        <input type="text" id="edit-text" style="width: 100%; padding: 12px; border: 2px solid var(--border); border-radius: 12px; font-size: 1rem; font-family: inherit; outline: none;">
+      </div>
+      <div style="text-align: left; margin-bottom: 20px;">
+        <label style="display: block; margin-bottom: 8px; color: var(--text-sub); font-size: 0.9rem;">截止日期</label>
+        <div class="input-row">
+          <input type="date" id="edit-date" style="flex: 1; padding: 10px; border: 2px solid var(--border); border-radius: 12px; font-family: inherit;">
+          <input type="time" id="edit-time" style="width: 100px; padding: 10px; border: 2px solid var(--border); border-radius: 12px; font-family: inherit;">
+        </div>
+      </div>
+      <div class="modal-buttons">
+        <button class="modal-btn cancel" onclick="closeEditModal()">取消</button>
+        <button class="modal-btn confirm" style="background: var(--primary);" onclick="confirmEdit()">保存</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let todos = [];
+    let currentFilter = 'all';
+    let draggedItem = null;
+    let pendingDeleteId = null;
+    let pendingDeleteArchived = false;
+    let editingTodoId = null;
+    let currentMonth = new Date();
+    let selectedDate = null;
+
+    function init() {
+      loadFromStorage();
+      renderCalendar();
+      render();
+    }
+
+    function loadFromStorage() {
+      const stored = localStorage.getItem('todolist-items');
+      if (stored) {
+        todos = JSON.parse(stored);
+      }
+    }
+
+    function saveToStorage() {
+      localStorage.setItem('todolist-items', JSON.stringify(todos));
+    }
+
+    function generateId() {
+      return Date.now().toString(36) + Math.random().toString(36).substr(2);
+    }
+
+    function getToday() {
+      return new Date().toISOString().split('T')[0];
+    }
+
+    function getTasksForDate(dateStr) {
+      return todos.filter(t => t.deadline && t.deadline.startsWith(dateStr));
+    }
+
+    function renderCalendar() {
+      const year = currentMonth.getFullYear();
+      const month = currentMonth.getMonth();
+      
+      document.getElementById('calendar-title').textContent = 
+        `${year}年${month + 1}月`;
+      
+      const firstDay = new Date(year, month, 1);
+      const lastDay = new Date(year, month + 1, 0);
+      const startDay = firstDay.getDay();
+      const daysInMonth = lastDay.getDate();
+      
+      const today = getToday();
+      const prevMonth = new Date(year, month, 0);
+      const daysInPrevMonth = prevMonth.getDate();
+      
+      let html = '';
+      
+      for (let i = startDay - 1; i >= 0; i--) {
+        const day = daysInPrevMonth - i;
+        const dateStr = `${prevMonth.getFullYear()}-${String(prevMonth.getMonth() + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+        const tasks = getTasksForDate(dateStr);
+        const hasTasks = tasks.length > 0;
+        html += `<div class="calendar-day other-month ${hasTasks ? 'has-tasks' : ''}" onclick="selectDate('${dateStr}')">${day}</div>`;
+      }
+      
+      for (let day = 1; day <= daysInMonth; day++) {
+        const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+        const tasks = getTasksForDate(dateStr);
+        const hasTasks = tasks.length > 0;
+        const isToday = dateStr === today;
+        const isSelected = selectedDate === dateStr;
+        
+        html += `<div class="calendar-day ${isToday ? 'today' : ''} ${isSelected ? 'selected' : ''} ${hasTasks ? 'has-tasks' : ''}" 
+          onclick="selectDate('${dateStr}')">${day}</div>`;
+      }
+      
+      const remaining = 42 - (startDay + daysInMonth);
+      for (let day = 1; day <= remaining; day++) {
+        const nextMonth = new Date(year, month + 1, day);
+        const dateStr = `${nextMonth.getFullYear()}-${String(nextMonth.getMonth() + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+        const tasks = getTasksForDate(dateStr);
+        const hasTasks = tasks.length > 0;
+        html += `<div class="calendar-day other-month ${hasTasks ? 'has-tasks' : ''}" onclick="selectDate('${dateStr}')">${day}</div>`;
+      }
+      
+      document.getElementById('calendar-days').innerHTML = html;
+    }
+
+    function changeMonth(delta) {
+      currentMonth.setMonth(currentMonth.getMonth() + delta);
+      renderCalendar();
+    }
+
+    function selectDate(dateStr) {
+      selectedDate = dateStr;
+      renderCalendar();
+      renderSelectedDateTasks();
+    }
+
+    function renderSelectedDateTasks() {
+      const titleEl = document.getElementById('selected-date-title');
+      const tasksEl = document.getElementById('selected-date-tasks');
+      
+      if (!selectedDate) {
+        titleEl.style.display = 'none';
+        tasksEl.innerHTML = '';
+        return;
+      }
+      
+      const date = new Date(selectedDate);
+      const today = getToday();
+      let label = '';
+      if (selectedDate === today) {
+        label = '今日';
+      } else {
+        label = date.toLocaleDateString('zh-CN', { month: 'short', day: 'numeric' });
+      }
+      
+      titleEl.textContent = `${label}的待办事项`;
+      titleEl.style.display = 'block';
+      
+      const tasks = getTasksForDate(selectedDate);
+      
+      if (tasks.length === 0) {
+        tasksEl.innerHTML = '<div class="no-results" style="padding: 10px;">暂无当日待办</div>';
+      } else {
+        tasksEl.innerHTML = tasks.map(t => `
+          <div class="selected-date-task ${t.completed ? 'completed' : ''}">
+            <div class="checkbox ${t.completed ? 'checked' : ''}" onclick="toggleCompleteFromCalendar('${t.id}')"></div>
+            <span class="todo-text">${t.text}</span>
+          </div>
+        `).join('');
+      }
+    }
+
+    function toggleCompleteFromCalendar(id) {
+      toggleComplete(id);
+      renderCalendar();
+      renderSelectedDateTasks();
+    }
+
+    function addTodo() {
+      const input = document.getElementById('todo-input');
+      const deadlineInput = document.getElementById('deadline-input');
+      const timeInput = document.getElementById('time-input');
+      const text = input.value.trim();
+      let deadline = deadlineInput.value || null;
+      const time = timeInput.value || null;
+
+      if (!text) return;
+
+      if (deadline && time) {
+        deadline = `${deadline}T${time}`;
+      }
+
+      const todo = {
+        id: generateId(),
+        text: text,
+        deadline: deadline,
+        pinned: false,
+        completed: false,
+        completedAt: null,
+        createdAt: new Date().toISOString()
+      };
+
+      const pinnedTodos = todos.filter(t => t.pinned && !t.completed);
+      const unpinnedTodos = todos.filter(t => !t.pinned && !t.completed);
+      const archivedTodos = todos.filter(t => t.completed);
+
+      todos = [...pinnedTodos, ...unpinnedTodos, ...archivedTodos];
+      todos.unshift(todo);
+
+      saveToStorage();
+      render();
+
+      input.value = '';
+      deadlineInput.value = '';
+      timeInput.value = '';
+    }
+
+    function handleKeyPress(event) {
+      if (event.key === 'Enter') {
+        addTodo();
+      }
+    }
+
+    function toggleComplete(id) {
+      const todo = todos.find(t => t.id === id);
+      if (todo) {
+        todo.completed = !todo.completed;
+        todo.completedAt = todo.completed ? new Date().toISOString() : null;
+        if (todo.completed) {
+          todo.pinned = false;
+        }
+        saveToStorage();
+        render();
+      }
+    }
+
+    function showDeleteModal(id, isArchived = false) {
+      pendingDeleteId = id;
+      pendingDeleteArchived = isArchived;
+      const title = document.getElementById('delete-modal-title');
+      const text = document.getElementById('delete-modal-text');
+      if (isArchived) {
+        title.textContent = '删除归档事项';
+        text.textContent = '确定要删除这个归档事项吗？删除后将无法恢复。';
+      } else {
+        title.textContent = '确认删除';
+        text.textContent = '确定要删除这个待办事项吗？';
+      }
+      document.getElementById('delete-modal').classList.add('show');
+    }
+
+    function closeDeleteModal() {
+      pendingDeleteId = null;
+      pendingDeleteArchived = false;
+      document.getElementById('delete-modal').classList.remove('show');
+    }
+
+    function confirmDelete() {
+      if (pendingDeleteId) {
+        todos = todos.filter(t => t.id !== pendingDeleteId);
+        saveToStorage();
+        render();
+      }
+      closeDeleteModal();
+    }
+
+    function showEditModal(id) {
+      const todo = todos.find(t => t.id === id);
+      if (!todo || todo.completed) return;
+      
+      editingTodoId = id;
+      document.getElementById('edit-text').value = todo.text;
+      
+      if (todo.deadline) {
+        const parts = todo.deadline.split('T');
+        document.getElementById('edit-date').value = parts[0] || '';
+        document.getElementById('edit-time').value = parts[1] || '';
+      } else {
+        document.getElementById('edit-date').value = '';
+        document.getElementById('edit-time').value = '';
+      }
+      
+      document.getElementById('edit-modal').classList.add('show');
+    }
+
+    function closeEditModal() {
+      editingTodoId = null;
+      document.getElementById('edit-modal').classList.remove('show');
+    }
+
+    function confirmEdit() {
+      if (!editingTodoId) return;
+      
+      const todo = todos.find(t => t.id === editingTodoId);
+      if (!todo) return;
+      
+      const text = document.getElementById('edit-text').value.trim();
+      if (!text) return;
+      
+      const date = document.getElementById('edit-date').value;
+      const time = document.getElementById('edit-time').value;
+      
+      todo.text = text;
+      if (date && time) {
+        todo.deadline = `${date}T${time}`;
+      } else if (date) {
+        todo.deadline = date;
+      } else {
+        todo.deadline = null;
+      }
+      
+      saveToStorage();
+      render();
+      closeEditModal();
+    }
+
+    function togglePin(id) {
+      const todo = todos.find(t => t.id === id);
+      if (todo && !todo.completed) {
+        todo.pinned = !todo.pinned;
+        
+        const pinnedTodos = todos.filter(t => t.pinned && !t.completed);
+        const unpinnedTodos = todos.filter(t => !t.pinned && !t.completed);
+        const archivedTodos = todos.filter(t => t.completed);
+        
+        todos = [...pinnedTodos, ...unpinnedTodos, ...archivedTodos];
+        
+        saveToStorage();
+        render();
+      }
+    }
+
+    function restoreTodo(id) {
+      const todo = todos.find(t => t.id === id);
+      if (todo) {
+        todo.completed = false;
+        todo.completedAt = null;
+        saveToStorage();
+        render();
+      }
+    }
+
+    function setFilter(filter) {
+      currentFilter = filter;
+      
+      document.querySelectorAll('.stat-card').forEach(card => {
+        card.classList.toggle('active', card.dataset.filter === filter);
+      });
+
+      document.querySelectorAll('.filter-btn').forEach(btn => {
+        btn.classList.toggle('active', 
+          (filter === 'all' && btn.textContent === '全部') ||
+          (filter === 'pending' && btn.textContent === '待办') ||
+          (filter === 'due-today' && btn.textContent === '今日到期') ||
+          (filter === 'completed' && btn.textContent === '已完成')
+        );
+      });
+
+      render();
+    }
+
+    function toggleArchived() {
+      const list = document.getElementById('archived-list');
+      const title = document.querySelector('.section-title');
+      list.style.display = list.style.display === 'none' ? 'block' : 'none';
+      title.classList.toggle('collapsed');
+    }
+
+    function formatDeadline(deadline) {
+      if (!deadline) return '';
+      
+      let datePart = deadline;
+      let timePart = null;
+      
+      if (deadline.includes('T')) {
+        const parts = deadline.split('T');
+        datePart = parts[0];
+        timePart = parts[1];
+      }
+      
+      const date = new Date(datePart);
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const deadlineDate = new Date(datePart);
+      deadlineDate.setHours(0, 0, 0, 0);
+
+      const diff = Math.floor((deadlineDate - today) / (1000 * 60 * 60 * 24));
+
+      let text = '';
+      if (diff < 0) text = '已过期';
+      else if (diff === 0) text = '今日到期';
+      else if (diff === 1) text = '明天到期';
+      else text = date.toLocaleDateString('zh-CN', { month: 'short', day: 'numeric' });
+      
+      if (timePart) {
+        text += ` ${timePart}`;
+      }
+      
+      const cls = diff < 0 ? 'overdue' : (diff === 0 ? 'due-today' : '');
+      return { text, class: cls };
+    }
+
+    function getFilteredTodos() {
+      const today = getToday();
+      const activeTodos = todos.filter(t => !t.completed);
+      const archivedTodos = todos.filter(t => t.completed);
+
+      if (currentFilter === 'all') {
+        return { active: activeTodos, archived: archivedTodos, filter: 'all' };
+      }
+      if (currentFilter === 'pending') {
+        return { active: activeTodos, archived: [], filter: 'pending' };
+      }
+      if (currentFilter === 'completed') {
+        return { active: [], archived: archivedTodos, filter: 'completed' };
+      }
+      if (currentFilter === 'due-today') {
+        const dueToday = activeTodos.filter(t => t.deadline && t.deadline.startsWith(today));
+        return { active: dueToday, archived: [], filter: 'due-today' };
+      }
+      return { active: activeTodos, archived: archivedTodos, filter: 'all' };
+    }
+
+    function updateStats() {
+      const today = getToday();
+      const activeTodos = todos.filter(t => !t.completed);
+      const completedToday = todos.filter(t => t.completed && t.completedAt && t.completedAt.split('T')[0] === today);
+      const dueToday = activeTodos.filter(t => t.deadline && t.deadline.startsWith(today));
+
+      document.getElementById('pending-count').textContent = activeTodos.length;
+      document.getElementById('completed-count').textContent = completedToday.length;
+      document.getElementById('due-today-count').textContent = dueToday.length;
+      document.getElementById('archived-count').textContent = todos.filter(t => t.completed).length;
+    }
+
+    function renderTodoItem(todo, isArchived = false) {
+      const deadlineInfo = todo.deadline ? formatDeadline(todo.deadline) : null;
+      const dueSoonClass = todo.deadline && !todo.completed && todo.deadline.startsWith(getToday()) ? 'due-soon' : '';
+      const pinnedClass = todo.pinned && !todo.completed ? 'pinned' : '';
+
+      return `
+        <div class="todo-item ${todo.completed ? 'completed' : ''} ${dueSoonClass} ${pinnedClass}" 
+             draggable="${!isArchived && !todo.completed}" 
+             data-pinned="${todo.pinned}"
+             ondragstart="handleDragStart(event)"
+             ondragend="handleDragEnd(event)"
+             ondragover="handleDragOver(event)"
+             ondrop="handleDrop(event)">
+          ${!isArchived && !todo.completed ? '<span class="drag-handle">⋮⋮</span>' : ''}
+          <div class="checkbox ${todo.completed ? 'checked' : ''}" onclick="toggleComplete('${todo.id}')"></div>
+          <span class="todo-text">${todo.text}</span>
+          ${deadlineInfo ? `<span class="todo-deadline ${deadlineInfo.class}">${deadlineInfo.text}</span>` : ''}
+          ${!isArchived && !todo.completed ? `
+            <button class="btn-edit" onclick="showEditModal('${todo.id}')" title="编辑">✏️</button>
+            <button class="btn-pin ${todo.pinned ? 'pinned' : ''}" onclick="togglePin('${todo.id}')" title="${todo.pinned ? '取消置顶' : '置顶'}">
+              📌
+            </button>
+          ` : ''}
+          ${isArchived ? `
+            <button class="btn-restore" onclick="restoreTodo('${todo.id}')">恢复</button>
+            <button class="btn-delete" onclick="showDeleteModal('${todo.id}', true)">×</button>
+          ` : `
+            <button class="btn-delete" onclick="showDeleteModal('${todo.id}', false)">×</button>
+          `}
+        </div>
+      `;
+    }
+
+    function render() {
+      const { active, archived, filter } = getFilteredTodos();
+      const todoList = document.getElementById('todo-list');
+      const archivedList = document.getElementById('archived-list');
+
+      updateStats();
+      renderCalendar();
+      if (selectedDate) {
+        renderSelectedDateTasks();
+      }
+
+      const pinnedTodos = active.filter(t => t.pinned);
+      const unpinnedTodos = active.filter(t => !t.pinned);
+
+      if (filter === 'completed') {
+        if (archived.length === 0) {
+          todoList.innerHTML = '<div class="no-results">暂无已完成的事项</div>';
+        } else {
+          todoList.innerHTML = archived.map(t => renderTodoItem(t, false)).join('');
+        }
+        archivedList.style.display = 'none';
+      } else if (filter === 'due-today' || filter === 'pending') {
+        if (active.length === 0) {
+          todoList.innerHTML = '<div class="no-results">暂无相关事项</div>';
+        } else {
+          todoList.innerHTML = active.map(t => renderTodoItem(t, false)).join('');
+        }
+        archivedList.style.display = 'none';
+      } else {
+        if (pinnedTodos.length === 0 && unpinnedTodos.length === 0 && archived.length === 0) {
+          todoList.innerHTML = '<div class="empty-state">暂无待办事项</div>';
+        } else {
+          let html = '';
+          if (pinnedTodos.length > 0) {
+            html += '<div class="pinned-section-title">已置顶</div>';
+            html += pinnedTodos.map(t => renderTodoItem(t, false)).join('');
+          }
+          if (unpinnedTodos.length > 0) {
+            html += unpinnedTodos.map(t => renderTodoItem(t, false)).join('');
+          }
+          todoList.innerHTML = html || '<div class="empty-state">暂无待办事项</div>';
+        }
+
+        if (archived.length === 0) {
+          archivedList.innerHTML = '<div class="empty-state">暂无归档事项</div>';
+        } else {
+          archivedList.innerHTML = archived.map(t => renderTodoItem(t, true)).join('');
+        }
+
+        const archivedSection = document.querySelector('.archived-section');
+        archivedList.style.display = archivedSection.querySelector('.section-title').classList.contains('collapsed') ? 'none' : 'block';
+      }
+    }
+
+    function handleDragStart(event) {
+      draggedItem = event.target.closest('.todo-item');
+      draggedItem.classList.add('dragging');
+      event.dataTransfer.effectAllowed = 'move';
+      event.dataTransfer.setData('isPinned', draggedItem.dataset.pinned === 'true');
+    }
+
+    function handleDragEnd(event) {
+      draggedItem.classList.remove('dragging');
+      draggedItem = null;
+    }
+
+    function handleDragOver(event) {
+      event.preventDefault();
+      event.dataTransfer.dropEffect = 'move';
+
+      const target = event.target.closest('.todo-item');
+      if (target && target !== draggedItem && !target.classList.contains('completed')) {
+        const isDraggingPinned = draggedItem.dataset.pinned === 'true';
+        const isTargetPinned = target.dataset.pinned === 'true';
+
+        if (isDraggingPinned === isTargetPinned) {
+          const todoList = document.getElementById('todo-list');
+          const siblings = [...todoList.querySelectorAll(`.todo-item:not(.completed)[data-pinned="${isDraggingPinned}"]`)];
+          const draggedIndex = siblings.indexOf(draggedItem);
+          const targetIndex = siblings.indexOf(target);
+
+          if (draggedIndex < targetIndex) {
+            target.parentNode.insertBefore(draggedItem, target.nextSibling);
+          } else {
+            target.parentNode.insertBefore(draggedItem, target);
+          }
+        }
+      }
+    }
+
+    function handleDrop(event) {
+      event.preventDefault();
+
+      const todoList = document.getElementById('todo-list');
+      const items = todoList.querySelectorAll('.todo-item');
+      const newOrder = [];
+
+      items.forEach(item => {
+        const checkbox = item.querySelector('.checkbox');
+        const id = checkbox.getAttribute('onclick').match(/'([^']+)'/)[1];
+        const todo = todos.find(t => t.id === id);
+        if (todo && !todo.completed) {
+          newOrder.push(todo);
+        }
+      });
+
+      const pinnedInOrder = newOrder.filter(t => t.pinned);
+      const unpinnedInOrder = newOrder.filter(t => !t.pinned);
+      const remainingTodos = todos.filter(t => t.completed || !newOrder.find(nt => nt.id === t.id));
+      todos = [...pinnedInOrder, ...unpinnedInOrder, ...remainingTodos];
+
+      saveToStorage();
+      render();
+    }
+
+    init();
+  </script>
+</body>
+</html>
